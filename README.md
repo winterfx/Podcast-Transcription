@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Podcast Transcription App
 
-## Getting Started
+一个基于 Next.js 和 OpenAI Whisper API 的播客转录应用，支持音频文件转录和智能摘要生成。
 
-First, run the development server:
+## 🌟 特性
 
+- 🎯 支持音频文件上传和 URL 输入两种方式
+- 🎙️ 支持小宇宙播客链接解析
+- 📝 使用 OpenAI Whisper API 进行高质量音频转录
+- 📊 AI 驱动的内容摘要生成
+- 🎨 现代化的 UI 设计
+- 💾 支持转录文本和摘要的下载
+- 🎵 内置音频播放器
+
+## 🚀 快速开始
+
+### 前置要求
+
+- Node.js 18+ 
+- OpenAI API Key
+
+### 安装
+
+1. 克隆仓库：
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/podcast-transcription.git
+cd podcast-transcription
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 安装依赖：
+```bash
+npm install
+# 或
+yarn install
+# 或
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. 配置环境变量：
+创建 `.env.local` 文件并添加以下内容：
+```env
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. 启动开发服务器：
+```bash
+npm run dev
+# 或
+yarn dev
+# 或
+pnpm dev
+```
 
-## Learn More
+访问 [http://localhost:3000](http://localhost:3000) 查看应用。
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ 技术栈
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: [Next.js 14](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
+- **API**: [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text)
+- **Type Safety**: [TypeScript](https://www.typescriptlang.org/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 使用说明
 
-## Deploy on Vercel
+1. **文件上传**：
+   - 点击 "File Upload" 标签
+   - 选择本地音频文件
+   - 点击 "Transcribe" 开始转录
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **URL 输入**：
+   - 点击 "URL Input" 标签
+   - 输入播客链接（支持小宇宙播客）
+   - 点击 "Transcribe" 开始转录
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **查看结果**：
+   - 转录完成后会显示详细的文本内容
+   - 同时生成内容摘要
+   - 可以通过下载按钮保存转录文本和摘要
+
+## 🤝 贡献
+
+欢迎提交 Pull Requests 和 Issues！
+
+## 📄 许可证
+
+MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
