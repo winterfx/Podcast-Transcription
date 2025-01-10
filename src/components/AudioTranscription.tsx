@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
-import { customAI } from '@/lib/customAI'
 import { Loader2, Upload, Download, FileAudio, Volume2, FileText, FileStack, Link } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getFileExtension, getMimeType } from '@/lib/audio'
 
 interface Props {
   onTranscriptionComplete: (transcript: string) => void;
@@ -48,7 +48,7 @@ export default function AudioTranscription({ onTranscriptionComplete }: Props) {
       }
       setAudioUrl('')
       setAudioFile(null)
-      const response = await fetch('/api/download', {
+      const response = await fetch('/api/audio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,15 +64,18 @@ export default function AudioTranscription({ onTranscriptionComplete }: Props) {
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       setAudioUrl(blobUrl);
-      setAudioFile(new File([blob], 'podcast.mp3', { type: 'audio/mpeg' }));
+
+      const extension = getFileExtension(urlInput);
+      const mimeType = getMimeType(blob, urlInput);
+      const audioFile = new File([blob], `podcast.${extension}`, { type: mimeType });
+      setAudioFile(audioFile);
 
       // 开始转录
+      const formData = new FormData();
+      formData.append('file', audioFile);
       const transcribeResponse = await fetch('/api/transcribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: urlInput }),
+        body: formData,
       });
 
       if (!transcribeResponse.ok) {

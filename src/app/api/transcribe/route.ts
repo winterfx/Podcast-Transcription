@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { parseXiaoyuzhouUrl } from '@/lib/utils';
+import { getExtensionFromMimeType } from '@/lib/audio';
 
 const client = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -46,66 +47,24 @@ export async function POST(request: Request) {
   try {
     console.log('[Transcription] Starting transcription request');
     
-    let audioFile: File;
-    const contentType = request.headers.get('content-type');
+    const formData = await request.formData();
+    const file = formData.get('file');
     
-    if (contentType?.includes('application/json')) {
-      const body = await request.json();
-      let audioUrl = body.url;
-      
-      // 如果是小宇宙链接，解析出音频URL
-      if (audioUrl.includes('xiaoyuzhoufm.com')) {
-        console.log('[Transcription] Parsing Xiaoyuzhou URL');
-        audioUrl = await parseXiaoyuzhouUrl(audioUrl);
-        console.log('[Transcription] Got audio URL:', audioUrl);
-      }
-      
-      console.log('[Transcription] Downloading audio from URL:', audioUrl);
-      const response = await fetch(audioUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to download audio from URL: ${response.statusText}`);
-      }
-      
-      const blob = await response.blob();
-      console.log('[Transcription] Downloaded blob:', {
-        type: blob.type,
-        size: blob.size
-      });
-      
-      // 从 URL 获取文件扩展名
-      const extension = audioUrl.split('.').pop() || 'mp3';
-      const mimeType = blob.type || `audio/${extension}`;
-      
-      // 创建一个新的 FormData，保持原始 MIME type
-      const formData = new FormData();
-      formData.append('file', blob, `audio.${extension}`);
-      audioFile = formData.get('file') as File;
-      
-      console.log('[Transcription] Created audio file:', {
-        name: audioFile.name,
-        type: audioFile.type,
-        size: audioFile.size
-      });
-    } else {
-      const formData = await request.formData();
-      audioFile = formData.get('file') as File;
-      console.log('[Transcription] Received audio file details:', {
-        name: audioFile.name,
-        type: audioFile.type,
-        size: audioFile.size,
-        lastModified: audioFile.lastModified
-      });
-    }
-    
-    if (!audioFile) {
+    if (!file) {
       return NextResponse.json(
-        { error: 'No audio file provided' }, { status: 400 }
+        { error: 'No audio file provided' },
+        { status: 400 }
       );
     }
 
+    console.log('[Transcription] Received file details:', {
+      type: file instanceof Blob ? file.type : typeof file,
+      size: file instanceof Blob ? file.size : 'unknown'
+    });
+
     // 检查文件是否可读
     try {
-      const arrayBuffer = await audioFile.arrayBuffer();
+      const arrayBuffer = await (file as Blob).arrayBuffer();
       console.log('[Transcription] Successfully read file to buffer, size:', arrayBuffer.byteLength);
     } catch (error) {
       console.error('[Transcription] Error reading file:', error);
@@ -117,9 +76,13 @@ export async function POST(request: Request) {
 
     console.log('[Transcription] Starting Whisper transcription');
     try {
+      const fileType = file instanceof Blob ? file.type : 'audio/mpeg';
+      console.log('[Transcription] Audio file type:', fileType);
+      const extension = `.${getExtensionFromMimeType(fileType)}`;
+
       const response = await client.audio.transcriptions.create({
         model: 'whisper-1',
-        file: audioFile,
+        file: new File([file as Blob], `audio${extension}`, { type: fileType }),
         response_format: "text",
         language: "en"
       });
