@@ -1,5 +1,100 @@
 # Podcast Transcription App
 
+[English](#english) | [中文](#chinese)
+
+<h2 id="english">English</h2>
+
+A podcast transcription application based on Next.js and OpenAI Whisper API, supporting audio file transcription and intelligent summary generation.
+
+## ✨ Features
+
+- 🎯 Support both file upload and URL input
+- 🎙️ Support for Xiaoyuzhou podcast link parsing
+- 📝 High-quality audio transcription using OpenAI Whisper API
+- 📊 AI-powered content summarization
+- 🎨 Modern UI design
+- 💾 Download transcripts and summaries
+- 🎵 Built-in audio player
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- OpenAI API Key
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/podcast-transcription.git
+cd podcast-transcription
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Configure environment variables:
+Create a `.env.local` file and add:
+```env
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+NEXT_PUBLIC_BASE_URL=your_endpoint
+```
+
+4. Start the development server:
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) to view the app.
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 14](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
+- **API**: [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text)
+- **Type Safety**: [TypeScript](https://www.typescriptlang.org/)
+
+## 📝 Usage
+
+1. **File Upload**:
+   - Click the "File Upload" tab
+   - Select a local audio file
+   - Click "Transcribe" to start
+
+2. **URL Input**:
+   - Click the "URL Input" tab
+   - Enter a podcast link (supports Xiaoyuzhou podcast)
+   - Click "Transcribe" to start
+
+3. **View Results**:
+   - View detailed transcription after processing
+   - Get AI-generated summary
+   - Download transcripts and summaries using the download buttons
+
+## 🤝 Contributing
+
+Pull Requests and Issues are welcome!
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details.
+
+---
+
+<h2 id="chinese">中文</h2>
+
 一个基于 Next.js 和 OpenAI Whisper API 的播客转录应用，支持音频文件转录和智能摘要生成。
 
 ## 🌟 特性
@@ -40,6 +135,7 @@ pnpm install
 创建 `.env.local` 文件并添加以下内容：
 ```env
 NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+NEXT_PUBLIC_BASE_URL=your_endpoint
 ```
 
 4. 启动开发服务器：
