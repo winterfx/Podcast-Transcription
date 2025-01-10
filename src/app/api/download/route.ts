@@ -17,6 +17,8 @@ export async function POST(request: Request) {
       console.log('[Download] Parsing Xiaoyuzhou URL');
       audioUrl = await parseXiaoyuzhouUrl(url);
       console.log('[Download] Got audio URL:', audioUrl);
+    }else{
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
     // 获取音频文件
@@ -30,8 +32,7 @@ export async function POST(request: Request) {
     const filename = urlParts[urlParts.length - 1] || 'audio.mp3';
 
     // 创建响应流
-    const headers = new Headers();
-    headers.set('Content-Type', 'audio/mpeg');
+    const headers = new Headers(response.headers);
     headers.set('Content-Disposition', `attachment; filename="${filename}"`);
 
     return new NextResponse(response.body, {
