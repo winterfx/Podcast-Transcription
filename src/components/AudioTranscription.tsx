@@ -187,7 +187,7 @@ export default function AudioTranscription() {
             <Tabs 
               defaultValue="file" 
               className="w-full"
-              onValueChange={(_) => {
+              onValueChange={() => {
                 // 切换 tab 时清理状态
                 if (audioUrl) {
                   URL.revokeObjectURL(audioUrl)
