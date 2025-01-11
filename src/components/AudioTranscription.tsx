@@ -8,20 +8,14 @@ import { Loader2, Upload, Download, FileAudio, Volume2, FileText, FileStack, Lin
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getFileExtension, getMimeType } from '@/lib/audio'
 
-interface Props {
-  onTranscriptionComplete: (transcript: string) => void;
-}
-
-export default function AudioTranscription({ onTranscriptionComplete }: Props) {
+export default function AudioTranscription() {
   const [audioUrl, setAudioUrl] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [transcription, setTranscription] = useState('')
   const [summary, setSummary] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [urlInput, setUrlInput] = useState('')
-  const [isDownloading, setIsDownloading] = useState(false)
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {

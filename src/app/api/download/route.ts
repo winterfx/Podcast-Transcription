@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { parseXiaoyuzhouUrl } from '@/lib/utils';
-import { pipeline } from 'stream/promises';
-import { Readable } from 'stream';
 
 export async function POST(request: Request) {
   try {
