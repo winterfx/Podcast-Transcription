@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { parseXiaoyuzhouUrl } from '@/lib/utils';
 import { getExtensionFromMimeType } from '@/lib/audio';
 
 const client = new OpenAI({
