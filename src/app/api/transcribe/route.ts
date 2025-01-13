@@ -15,19 +15,12 @@ async function formatWithAI(text: string): Promise<string> {
       messages: [
         {
           role: "system",
-          content: `You are a professional transcript formatter. Format the given transcript to make it more readable by:
-1. Properly segment paragraphs based on topic changes
-2. Add proper punctuation and capitalization
-3. Identify and label speakers with their roles (e.g., "Host:", "Guest:", "Expert:")
-4. Highlight important contributions with [IMPORTANT] tags
-5. Remove filler words and repetitions while maintaining the meaning
-6. Format timestamps if mentioned
-7. Add section headers for major topic changes
-8. Preserve important quotes with quotation marks
-9. Mark key insights with [INSIGHT] tags
-10. Identify and tag the main speaker's contributions with [MAIN]
+          content: `You are a transcript formatter. Format the given transcript to make it more readable by:
+1. Adding basic punctuation and capitalization
+2. Keeping the original wording and structure
+3. Preserving all content without removing or summarizing anything
 
-Keep the content accurate but make it more structured and readable. Add metadata about speaker roles and importance when possible.`
+Make minimal changes to improve readability while keeping the original meaning and structure intact.`
         },
         {
           role: 'user',
