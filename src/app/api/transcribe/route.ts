@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getExtensionFromMimeType } from '@/lib/audio';
+import { logger } from '@/lib/utils';
 
 const client = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -37,14 +38,14 @@ Keep the content accurate but make it more structured and readable. Add metadata
 
     return response.choices[0]?.message?.content || text;
   } catch (error) {
-    console.error('AI formatting error:', error);
+    logger.error('AI formatting error:', error);
     return text; // 如果AI格式化失败，返回原始文本
   }
 }
 
 export async function POST(request: Request) {
   try {
-    console.log('[Transcription] Starting transcription request');
+    logger.info('[Transcription] Starting transcription request');
     
     const formData = await request.formData();
     const file = formData.get('file');
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('[Transcription] Received file details:', {
+    logger.info('[Transcription] Received file details:', {
       type: file instanceof Blob ? file.type : typeof file,
       size: file instanceof Blob ? file.size : 'unknown'
     });
@@ -64,19 +65,19 @@ export async function POST(request: Request) {
     // 检查文件是否可读
     try {
       const arrayBuffer = await (file as Blob).arrayBuffer();
-      console.log('[Transcription] Successfully read file to buffer, size:', arrayBuffer.byteLength);
+      logger.info('[Transcription] Successfully read file to buffer, size:', arrayBuffer.byteLength);
     } catch (error) {
-      console.error('[Transcription] Error reading file:', error);
+      logger.error('[Transcription] Error reading file:', error);
       return NextResponse.json(
         { error: 'Failed to read audio file' },
         { status: 400 }
       );
     }
 
-    console.log('[Transcription] Starting Whisper transcription');
+    logger.info('[Transcription] Starting Whisper transcription');
     try {
       const fileType = file instanceof Blob ? file.type : 'audio/mpeg';
-      console.log('[Transcription] Audio file type:', fileType);
+      logger.info('[Transcription] Audio file type:', fileType);
       const extension = `.${getExtensionFromMimeType(fileType)}`;
 
       const response = await client.audio.transcriptions.create({
@@ -85,28 +86,28 @@ export async function POST(request: Request) {
         response_format: "text",
         language: "en"
       });
-      console.log('[Transcription] Whisper transcription completed');
+      logger.info('[Transcription] Whisper transcription completed');
       const rawTranscript = typeof response === 'string' ? response : JSON.stringify(response);
-      console.log('[Transcription] Raw transcript length:', rawTranscript.length);
+      logger.info('[Transcription] Raw transcript length:', rawTranscript.length);
       
       // 使用AI格式化转录文本
-      console.log('[Transcription] Starting AI formatting');
+      logger.info('[Transcription] Starting AI formatting');
       const formattedTranscript = await formatWithAI(rawTranscript);
-      console.log('[Transcription] AI formatting completed');
-      console.log('[Transcription] Formatted transcript length:', formattedTranscript.length);
+      logger.info('[Transcription] AI formatting completed');
+      logger.info('[Transcription] Formatted transcript length:', formattedTranscript.length);
 
       return NextResponse.json({ 
         transcript: formattedTranscript 
       });
     } catch (error) {
-      console.error('[Transcription] Error:', error);
+      logger.error('[Transcription] Error:', error);
       return NextResponse.json(
         { error: 'Failed to transcribe audio' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('[Transcription] Error:', error);
+    logger.error('[Transcription] Error:', error);
     return NextResponse.json(
       { error: 'Failed to transcribe audio' },
       { status: 500 }

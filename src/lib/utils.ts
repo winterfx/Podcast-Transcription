@@ -7,51 +7,59 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export const logger = {
+  info: (...args: any[]) => {
+    const time = new Date().toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    });
+    console.log(`[${time}]`, ...args);
+  },
+  error: (...args: any[]) => {
+    const time = new Date().toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    });
+    console.error(`[${time}]`, ...args);
+  },
+  warn: (...args: any[]) => {
+    const time = new Date().toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    });
+    console.warn(`[${time}]`, ...args);
+  }
+};
+
 export async function parseXiaoyuzhouUrl(url: string): Promise<string> {
   try {
     // 验证小宇宙链接格式
     if (!url.includes('xiaoyuzhoufm.com')) {
-      throw new Error('Invalid Xiaoyuzhou URL')
+      throw new Error('Invalid Xiaoyuzhou URL');
     }
 
     // 获取页面内容
-    const { data } = await axios.get(url)
-    const $ = cheerio.load(data)
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
 
-    // 解析音频URL
-    const audioUrl = $('meta[property="og:audio"]').attr('content') || 
-                     $('audio source').attr('src')
-
+    // 查找音频链接
+    const audioUrl = $('audio source').attr('src');
     if (!audioUrl) {
-      throw new Error('Audio URL not found')
+      throw new Error('Audio URL not found');
     }
 
     return audioUrl
   } catch (error) {
-    console.error('Error parsing Xiaoyuzhou URL:', error)
+    logger.error('Error parsing Xiaoyuzhou URL:', error)
     throw error
   }
-}
-
-export function getMimeType(blob: Blob, filename: string): string {
-  // 如果blob已经有type，直接返回
-  if (blob.type) {
-    return blob.type;
-  }
-
-  // 根据文件扩展名判断
-  const extension = getFileExtension(filename).toLowerCase();
-  const mimeTypes: { [key: string]: string } = {
-    'mp3': 'audio/mpeg',
-    'wav': 'audio/wav',
-    'm4a': 'audio/mp4',
-    'ogg': 'audio/ogg',
-    'aac': 'audio/aac'
-  };
-
-  return mimeTypes[extension] || 'audio/mpeg'; // 默认返回 audio/mpeg
-}
-
-export function getFileExtension(filename: string): string {
-  return filename.split('.').pop() || '';
 }

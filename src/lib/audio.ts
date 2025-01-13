@@ -1,3 +1,5 @@
+import { logger } from './utils';
+
 // 获取文件扩展名
 export function getFileExtension(url: string): string {
   const ext = url.split('.').pop()?.toLowerCase();
@@ -19,8 +21,10 @@ export function getExtensionFromMimeType(type: string): string {
     case 'audio/m4a':
     case 'audio/mp4':
       return 'm4a';
+    case 'video/mp4':
+      return 'm4a';
     default:
-      console.log('[Audio] Unknown audio type:', type);
+      logger.warn('[Audio] Unknown audio type:', type);
       return 'mp3';
   }
 }
