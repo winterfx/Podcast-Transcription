@@ -1,4 +1,4 @@
-import { type ClassValue, clsx } from "clsx"
+import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import axios from "axios"
 import * as cheerio from "cheerio"
@@ -31,4 +31,27 @@ export async function parseXiaoyuzhouUrl(url: string): Promise<string> {
     console.error('Error parsing Xiaoyuzhou URL:', error)
     throw error
   }
+}
+
+export function getMimeType(blob: Blob, filename: string): string {
+  // 如果blob已经有type，直接返回
+  if (blob.type) {
+    return blob.type;
+  }
+
+  // 根据文件扩展名判断
+  const extension = getFileExtension(filename).toLowerCase();
+  const mimeTypes: { [key: string]: string } = {
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'm4a': 'audio/mp4',
+    'ogg': 'audio/ogg',
+    'aac': 'audio/aac'
+  };
+
+  return mimeTypes[extension] || 'audio/mpeg'; // 默认返回 audio/mpeg
+}
+
+export function getFileExtension(filename: string): string {
+  return filename.split('.').pop() || '';
 }

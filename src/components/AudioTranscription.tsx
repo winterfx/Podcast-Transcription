@@ -1,47 +1,62 @@
 'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card'
-import { Input } from './ui/input'
-import { Button } from './ui/button'
-import { Loader2, Upload, Download, FileAudio, Volume2, FileText, FileStack, Link } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getFileExtension, getMimeType } from '@/lib/audio'
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Loader2, Download, FileAudio, FileText, FileStack, Link, Podcast, Star } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
+import { getFileExtension, getMimeType } from '@/lib/audio';
 
 export default function AudioTranscription() {
-  const [audioUrl, setAudioUrl] = useState('')
-  const [audioFile, setAudioFile] = useState<File | null>(null)
-  const [transcription, setTranscription] = useState('')
-  const [summary, setSummary] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [urlInput, setUrlInput] = useState('')
-  
+  const [audioUrl, setAudioUrl] = useState('');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [transcription, setTranscription] = useState('');
+  const [summary, setSummary] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<'url' | 'podcast'>('url');
+  const [selectedPlatform, setSelectedPlatform] = useState('xiaoyuzhou');
+  const [error, setError] = useState<string | null>(null);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      // 清理之前的 URL 输入状态
-      setUrlInput('')
-      // 清理之前的音频 URL（如果存在）
+      setUrlInput('');
       if (audioUrl) {
-        URL.revokeObjectURL(audioUrl)
+        URL.revokeObjectURL(audioUrl);
       }
-      setAudioFile(file)
-      setAudioUrl(URL.createObjectURL(file))
+      setAudioFile(file);
+      setAudioUrl(URL.createObjectURL(file));
+      // 重置转录和总结
+      setTranscription('');
+      setSummary('');
     }
-  }
+  };
 
   const handleUrlSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!urlInput) return
+    e.preventDefault();
+    if (!urlInput) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // 清理之前的状态
       if (audioUrl) {
-        URL.revokeObjectURL(audioUrl)
+        URL.revokeObjectURL(audioUrl);
       }
-      setAudioUrl('')
-      setAudioFile(null)
+      setAudioUrl('');
+      setAudioFile(null);
+      // 重置转录和总结
+      setTranscription('');
+      setSummary('');
+
       const response = await fetch('/api/audio', {
         method: 'POST',
         headers: {
@@ -54,7 +69,6 @@ export default function AudioTranscription() {
         throw new Error('Failed to download audio');
       }
 
-      // 创建 blob URL 用于音频播放
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       setAudioUrl(blobUrl);
@@ -63,8 +77,20 @@ export default function AudioTranscription() {
       const mimeType = getMimeType(blob, urlInput);
       const audioFile = new File([blob], `podcast.${extension}`, { type: mimeType });
       setAudioFile(audioFile);
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
+    } finally {
+      setIsLoading(false);
+      setDialogOpen(false);
+    }
+  };
 
-      // 开始转录
+  const handleTranscribe = async () => {
+    if (!audioFile) return;
+
+    setIsTranscribing(true);
+    try {
       const formData = new FormData();
       formData.append('file', audioFile);
       const transcribeResponse = await fetch('/api/transcribe', {
@@ -79,7 +105,6 @@ export default function AudioTranscription() {
       const data = await transcribeResponse.json();
       setTranscription(data.transcript);
 
-      // 生成摘要
       const summaryResponse = await fetch('/api/summarize', {
         method: 'POST',
         headers: {
@@ -98,59 +123,12 @@ export default function AudioTranscription() {
       setSummary(summaryData.summary);
     } catch (err) {
       console.error('Error:', err);
-      alert('Failed to process audio. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsTranscribing(false);
     }
   };
 
-  const handleUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!audioFile) return
-
-    setIsLoading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', audioFile)
-
-      const response = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to transcribe audio')
-      }
-
-      const data = await response.json()
-      setTranscription(data.transcript);
-
-      // 生成摘要
-      const summaryResponse = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: data.transcript }],
-        }),
-      });
-
-      if (!summaryResponse.ok) {
-        throw new Error('Failed to generate summary');
-      }
-
-      const summaryData = await summaryResponse.json();
-      setSummary(summaryData.summary);
-    } catch (err) {
-      console.error('Error:', err)
-      alert('Failed to process audio. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 组件卸载时清理 blob URL
   useEffect(() => {
     return () => {
       if (audioUrl && audioUrl.startsWith('blob:')) {
@@ -168,135 +146,138 @@ export default function AudioTranscription() {
             Audio Transcription
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Transform your <span className="text-indigo-600 dark:text-indigo-400">podcasts</span> and <span className="text-indigo-600 dark:text-indigo-400">audio files</span> into text with <span className="text-indigo-600 dark:text-indigo-400">AI-powered</span> transcription and get intelligent summaries.
+            Transform your <span className="text-indigo-600 dark:text-indigo-400">podcasts</span> and <span className="text-indigo-600 dark:text-indigo-400">audio files or urls</span> into text with <span className="text-indigo-600 dark:text-indigo-400">AI-powered</span> transcription and get intelligent summaries.
           </p>
         </div>
 
         {/* Upload Section */}
-        <Card className="border-2 border-dashed bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileAudio className="h-5 w-5" />
-              <span>Upload Audio</span>
-            </CardTitle>
-            <CardDescription>
-              Upload your audio file or paste a podcast URL (supports podcast and direct audio links)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Tabs 
-              defaultValue="file" 
-              className="w-full"
-              onValueChange={() => {
-                // 切换 tab 时清理状态
-                if (audioUrl) {
-                  URL.revokeObjectURL(audioUrl)
-                }
-                setAudioUrl('')
-                setAudioFile(null)
-                setUrlInput('')
-                setTranscription('')
-                setSummary('')
+        <div className="flex flex-col justify-center items-center rounded-lg bg-white shadow-xl shadow-black/5 ring-1 ring-slate-700/10 p-2 max-w-fit mx-auto">
+          <div className="flex flex-row justify-center space-x-2">
+            <button
+              onClick={() => {
+                setDialogType('podcast');
+                setDialogOpen(true);
               }}
+              className="flex items-center justify-center rounded-lg p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
             >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="file" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  File Upload
-                </TabsTrigger>
-                <TabsTrigger value="url" className="flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  URL Input
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="file" className="mt-4">
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg hover:border-primary cursor-pointer">
-                      <Upload className="h-5 w-5" />
-                      <span>{audioFile ? audioFile.name : 'Choose audio file'}</span>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handleUploadSubmit}
-                    disabled={!audioFile || isLoading}
-                    className="min-w-[120px]"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="mr-2 h-4 w-4" />
-                        Transcribe
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="url" className="mt-4">
-                <form onSubmit={handleUrlSubmit} className="flex gap-4">
+              <Podcast className="w-5 h-5" />
+              <span className="ml-2">From Podcast</span>
+              <Star className="w-4 h-4 ml-1 fill-yellow-400 text-yellow-400" />
+            </button>
+            <div className="w-[1px] bg-slate-200"></div>
+            <button
+              onClick={() => document.getElementById('file-upload')?.click()}
+              className="flex items-center justify-center rounded-lg p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+            >
+              <FileAudio className="w-5 h-5" />
+              <span className="ml-2">From File</span>
+            </button>
+            <div className="w-[1px] bg-slate-200"></div>
+            <button
+              onClick={() => {
+                setDialogType('url');
+                setDialogOpen(true);
+              }}
+              className="flex items-center justify-center rounded-lg p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+            >
+              <Link className="w-5 h-5" />
+              <span className="ml-2">From URL</span>
+            </button>
+          </div>
+
+          <input
+            id="file-upload"
+            type="file"
+            accept="audio/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {dialogType === 'podcast' ? 'Enter Podcast URL' : 'Enter Audio URL'}
+                </DialogTitle>
+                <DialogDescription>
+                  {dialogType === 'podcast' 
+                    ? 'Paste the URL of the podcast episode you want to transcribe'
+                    : 'Paste the direct audio URL you want to transcribe'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleUrlSubmit}>
+                <div className="space-y-4">
+                  {dialogType === 'podcast' && (
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={selectedPlatform}
+                      onChange={(e) => setSelectedPlatform(e.target.value)}
+                    >
+                      <option value="xiaoyuzhou">小宇宙</option>
+                    </select>
+                  )}
+                  
                   <Input
                     type="url"
-                    placeholder="Enter podcast URL or direct audio link (e.g., https://www.xiaoyuzhoufm.com/... or https://example.com/audio.mp3..)"
+                    placeholder={
+                      dialogType === 'podcast' 
+                        ? 'Enter podcast URL...' 
+                        : 'Enter audio URL...'
+                    }
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    className="flex-1"
+                    className="w-full"
+                    required
                   />
+                  
                   <Button 
                     type="submit"
-                    disabled={!urlInput || isLoading}
-                    className="min-w-[120px]"
+                    disabled={isLoading || !urlInput}
+                    className="w-full"
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing
+                        Processing...
                       </>
                     ) : (
-                      <>
-                        <Volume2 className="mr-2 h-4 w-4" />
-                        Transcribe
-                      </>
+                      'Submit'
                     )}
                   </Button>
-                </form>
-                <div className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  <span>目前支持的播客链接:</span>
-                  <img 
-                    src="/xiaoyuzhou-logo.png" 
-                    alt="Xiaoyuzhou logo"
-                    className="h-4 w-4"
-                  />
                 </div>
-              </TabsContent>
-            </Tabs>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-            {audioUrl && (
-              <div className="rounded-lg border bg-card p-4 flex items-center gap-4">
-                <audio controls className="flex-1">
-                  <source src={audioUrl} type={audioFile?.type} />
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {audioUrl && (
+          <div className="rounded-lg border bg-card p-4 flex items-center gap-4">
+            <audio controls className="flex-1">
+              <source src={audioUrl} type={audioFile?.type} />
+              Your browser does not support the audio element.
+            </audio>
+            <Button
+              onClick={handleTranscribe}
+              disabled={isTranscribing}
+              className="flex items-center gap-2"
+            >
+              {isTranscribing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Transcribing...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4" />
+                  Transcribe
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
-        {/* Results Section */}
         {(transcription || summary) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Transcription Card */}
             {transcription && (
               <Card className="h-full bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 hover:shadow-lg transition-shadow duration-200">
                 <CardHeader>
@@ -326,7 +307,7 @@ export default function AudioTranscription() {
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div 
+                    <div
                       className="whitespace-pre-wrap text-base leading-7 tracking-wide overflow-y-auto max-h-[600px] scrollbar-thin"
                       style={{
                         fontSize: '1rem',
@@ -340,7 +321,6 @@ export default function AudioTranscription() {
               </Card>
             )}
 
-            {/* Summary Card */}
             {summary && (
               <Card className="h-full bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 hover:shadow-lg transition-shadow duration-200">
                 <CardHeader>
@@ -370,7 +350,7 @@ export default function AudioTranscription() {
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div 
+                    <div
                       className="whitespace-pre-wrap text-base leading-7 tracking-wide overflow-y-auto max-h-[600px] scrollbar-thin"
                       style={{
                         fontSize: '1rem',
@@ -385,7 +365,24 @@ export default function AudioTranscription() {
             )}
           </div>
         )}
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
+            <button
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setError(null)}
+            >
+              <span className="sr-only">Dismiss</span>
+              <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>Close</title>
+                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }
