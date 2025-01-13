@@ -1,4 +1,5 @@
 # Podcast Transcription App
+![](./public/demo.png)
 
 [English](#english) | [中文](#chinese)
 
