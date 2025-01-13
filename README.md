@@ -10,7 +10,7 @@ A podcast transcription application based on Next.js and OpenAI Whisper API, sup
 ## ✨ Features
 
 - 🎯 Support both file upload and URL input
-- 🎙️ Support for Xiaoyuzhou podcast link parsing
+- 🎙️ Support for Xiaoyuzhou podcast transcription
 - 📝 High-quality audio transcription using OpenAI Whisper API
 - 📊 AI-powered content summarization
 - 🎨 Modern UI design
@@ -101,7 +101,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ## 🌟 特性
 
 - 🎯 支持音频文件上传和 URL 输入两种方式
-- 🎙️ 支持小宇宙播客链接解析
+- 🎙️ 支持小宇宙播客音频转录
 - 📝 使用 OpenAI Whisper API 进行高质量音频转录
 - 📊 AI 驱动的内容摘要生成
 - 🎨 现代化的 UI 设计
@@ -182,3 +182,6 @@ pnpm dev
 ## 📄 许可证
 
 MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=winterfx/Podcast-Transcription&type=Date)](https://star-history.com/#winterfx/Podcast-Transcription&Date)
