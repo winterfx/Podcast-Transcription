@@ -13,6 +13,7 @@ import {
   DialogDescription,
 } from './ui/dialog';
 import { getFileExtension, getMimeType } from '@/lib/audio';
+import { logger } from '@/lib/utils';
 
 export default function AudioTranscription() {
   const [audioUrl, setAudioUrl] = useState('');
@@ -78,7 +79,7 @@ export default function AudioTranscription() {
       const audioFile = new File([blob], `podcast.${extension}`, { type: mimeType });
       setAudioFile(audioFile);
     } catch (err) {
-      console.error('Error:', err);
+      logger.error('Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
     } finally {
       setIsLoading(false);
@@ -122,7 +123,7 @@ export default function AudioTranscription() {
       const summaryData = await summaryResponse.json();
       setSummary(summaryData.summary);
     } catch (err) {
-      console.error('Error:', err);
+      logger.error('Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
     } finally {
       setIsTranscribing(false);

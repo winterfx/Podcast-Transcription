@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { logger } from '@/lib/utils';
 
 const client = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -9,10 +10,12 @@ const client = new OpenAI({
 
 export async function POST(request: Request) {
   try {
+    logger.info('[Summarize] Starting summarization request');
     const { messages } = await request.json();
 
     // 验证 messages 格式
     if (!Array.isArray(messages)) {
+      logger.warn('[Summarize] Invalid messages format');
       return NextResponse.json(
         { error: 'Messages must be an array' },
         { status: 400 }
@@ -49,26 +52,28 @@ Format the content with:
 • Quotation marks for direct quotes`
     };
 
+    const allMessages = [systemMessage, ...messages];
+    logger.info('[Summarize] Sending request to OpenAI');
+
     const response = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        systemMessage,
-        ...(messages.map(msg => ({
-          role: msg.role || 'user',
-          content: msg.content || ''
-        })) as ChatCompletionMessageParam[])
-      ],
-      temperature: 0.3,
-      max_tokens: 800,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.3
+      model: "gpt-3.5-turbo",
+      messages: allMessages,
+      temperature: 0.7,
+      max_tokens: 1000,
     });
 
-    return NextResponse.json({ 
-      summary: response.choices[0].message.content 
-    });
+    logger.info('[Summarize] Received response from OpenAI');
+    const summary = response.choices[0]?.message?.content;
+
+    if (!summary) {
+      logger.error('[Summarize] No summary generated');
+      throw new Error('No summary generated');
+    }
+
+    logger.info('[Summarize] Successfully generated summary');
+    return NextResponse.json({ summary });
   } catch (error) {
-    console.error('Summarization error:', error);
+    logger.error('[Summarize] Error:', error);
     return NextResponse.json(
       { error: 'Failed to generate summary' },
       { status: 500 }
