@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const logger = {
-  info: (...args: any[]) => {
+  info: (...args: unknown[]) => {
     const time = new Date().toLocaleTimeString('en-US', { 
       hour12: false,
       hour: '2-digit',
@@ -18,7 +18,7 @@ export const logger = {
     });
     console.log(`[${time}]`, ...args);
   },
-  error: (...args: any[]) => {
+  error: (...args: unknown[]) => {
     const time = new Date().toLocaleTimeString('en-US', { 
       hour12: false,
       hour: '2-digit',
@@ -28,7 +28,7 @@ export const logger = {
     });
     console.error(`[${time}]`, ...args);
   },
-  warn: (...args: any[]) => {
+  warn: (...args: unknown[]) => {
     const time = new Date().toLocaleTimeString('en-US', { 
       hour12: false,
       hour: '2-digit',
