@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { parseXiaoyuzhouUrl, logger } from '@/lib/utils';
+import { logger } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +9,23 @@ export async function POST(request: Request) {
     // 如果是小宇宙链接，解析出音频URL
     if (audioUrl.includes('xiaoyuzhoufm.com')) {
       logger.info('[Audio] Parsing Xiaoyuzhou URL');
-      audioUrl = await parseXiaoyuzhouUrl(audioUrl);
+      
+      // 直接在这里实现解析逻辑，避免额外的 API 调用
+      const parseResponse = await fetch(`${request.headers.get('origin')}/api/parse-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: audioUrl }),
+      });
+
+      if (!parseResponse.ok) {
+        const error = await parseResponse.json();
+        throw new Error(error.error || 'Failed to parse URL');
+      }
+
+      const data = await parseResponse.json();
+      audioUrl = data.audioUrl;
       logger.info('[Audio] Got audio URL:', audioUrl);
     }
     
