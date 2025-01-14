@@ -32,7 +32,7 @@ Make minimal changes to improve readability while keeping the original meaning a
     return response.choices[0]?.message?.content || text;
   } catch (error) {
     logger.error('AI formatting error:', error);
-    return text; // 如果AI格式化失败，返回原始文本
+    return text; // If AI formatting fails, return the original text
   }
 }
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       size: file instanceof Blob ? file.size : 'unknown'
     });
 
-    // 检查文件是否可读
+    // Check if the file is readable
     try {
       const arrayBuffer = await (file as Blob).arrayBuffer();
       logger.info('[Transcription] Successfully read file to buffer, size:', arrayBuffer.byteLength);
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       const rawTranscript = typeof response === 'string' ? response : JSON.stringify(response);
       logger.info('[Transcription] Raw transcript length:', rawTranscript.length);
       
-      // 使用AI格式化转录文本
+      // Use AI to format the transcript
       logger.info('[Transcription] Starting AI formatting');
       const formattedTranscript = await formatWithAI(rawTranscript);
       logger.info('[Transcription] AI formatting completed');
