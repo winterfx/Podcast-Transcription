@@ -37,7 +37,7 @@ export default function AudioTranscription() {
       }
       setAudioFile(file);
       setAudioUrl(URL.createObjectURL(file));
-      // 重置转录和总结
+      // Reset transcription and summary
       setTranscription('');
       setSummary('');
     }
@@ -54,7 +54,7 @@ export default function AudioTranscription() {
       }
       setAudioUrl('');
       setAudioFile(null);
-      // 重置转录和总结
+      // Reset transcription and summary
       setTranscription('');
       setSummary('');
 

@@ -59,6 +59,22 @@ pnpm dev
 
 Visit [http://localhost:3000](http://localhost:3000) to view the app.
 
+### Docker Deployment
+
+1. Build the Docker image:
+```bash
+docker build -t podcast-transcription .
+```
+
+2. Run the container:
+```bash
+docker run -p 3000:3000 podcast-transcription
+```
+
+### Zeabur Deployment
+
+This project is deployed using [Zeabur](https://zeabur.com).
+
 ## 🛠️ Tech Stack
 
 - **Framework**: [Next.js 14](https://nextjs.org/)
@@ -149,6 +165,22 @@ pnpm dev
 ```
 
 访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+
+### Docker 部署
+
+1. 构建 Docker 镜像：
+```bash
+docker build -t podcast-transcription .
+```
+
+2. 运行容器：
+```bash
+docker run -p 3000:3000 podcast-transcription
+```
+
+### Zeabur 部署
+
+本项目使用 [Zeabur](https://zeabur.com) 进行部署。
 
 ## 🛠️ 技术栈
 
