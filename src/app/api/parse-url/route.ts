@@ -23,10 +23,7 @@ export async function POST(request: Request) {
       
       // 使用 Promise 来处理音频URL的查找
       const audioUrl = await new Promise<string>((resolve, reject) => {
-        let timeoutId: NodeJS.Timeout;
-
-        // 设置超时
-        timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           reject(new Error('Timeout: Audio URL not found'));
         }, 30000);
 
