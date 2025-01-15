@@ -214,7 +214,7 @@ export default function AudioTranscription() {
                       value={selectedPlatform}
                       onChange={(e) => setSelectedPlatform(e.target.value)}
                     >
-                      <option value="xiaoyuzhou">小宇宙</option>
+                      <option value="xiaoyuzhou">xiaoyuzhou</option>
                     </select>
                   )}
                   
