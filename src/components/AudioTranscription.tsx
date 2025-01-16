@@ -48,7 +48,24 @@ export default function AudioTranscription() {
     if (!urlInput) return;
 
     setIsLoading(true);
+    setError(null); // Reset error state
     try {
+      // Validate URL format
+      try {
+        new URL(urlInput);
+      } catch {
+        throw new Error('Invalid URL format. Please enter a valid URL.');
+      }
+
+      // Only validate audio file extension for direct URL input
+      if (dialogType === 'url') {
+        const fileExtension = getFileExtension(urlInput).toLowerCase();
+        const validExtensions = ['mp3', 'wav', 'm4a', 'ogg', 'aac', 'mp4'];
+        if (!validExtensions.includes(fileExtension)) {
+          throw new Error(`Invalid audio file format. Supported formats are: ${validExtensions.join(', ')}`);
+        }
+      }
+
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
