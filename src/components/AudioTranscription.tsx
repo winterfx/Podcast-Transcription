@@ -28,7 +28,13 @@ export default function AudioTranscription() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'url' | 'podcast'>('url');
   const [selectedPlatform, setSelectedPlatform] = useState('xiaoyuzhou');
+  const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [error, setError] = useState<string | null>(null);
+
+  const languages = [
+    { value: 'auto', label: 'Auto Detect' },
+    { value: 'en', label: 'English' },
+  ];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,6 +129,8 @@ export default function AudioTranscription() {
     try {
       const formData = new FormData();
       formData.append('file', audioFile);
+      formData.append('language', selectedLanguage);
+      
       const transcribeResponse = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -281,28 +289,41 @@ export default function AudioTranscription() {
         </div>
 
         {audioUrl && (
-          <div className="rounded-lg border bg-card p-4 flex items-center gap-4">
-            <audio controls className="flex-1">
-              <source src={audioUrl} type={audioFile?.type} />
-              Your browser does not support the audio element.
-            </audio>
-            <Button
-              onClick={handleTranscribe}
-              disabled={isTranscribing}
-              className="flex items-center gap-2"
-            >
-              {isTranscribing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Transcribing...
-                </>
-              ) : (
-                <>
-                  <FileText className="h-4 w-4" />
-                  Transcribe
-                </>
-              )}
-            </Button>
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-card p-4 flex items-center gap-4">
+              <audio controls className="flex-1">
+                <source src={audioUrl} type={audioFile?.type} />
+                Your browser does not support the audio element.
+              </audio>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={handleTranscribe}
+                disabled={isTranscribing}
+                className="flex items-center gap-2"
+              >
+                {isTranscribing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Transcribing...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    Transcribe
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         )}
 
