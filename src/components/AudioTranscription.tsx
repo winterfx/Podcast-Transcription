@@ -15,6 +15,8 @@ import {
 import { getFileExtension, getMimeType } from '@/lib/audio';
 import { logger } from '@/lib/utils';
 
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+
 export default function AudioTranscription() {
   const [audioUrl, setAudioUrl] = useState('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -31,6 +33,10 @@ export default function AudioTranscription() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        setError('File size exceeds 25MB limit. Please upload a smaller file.');
+        return;
+      }
       setUrlInput('');
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
@@ -88,6 +94,12 @@ export default function AudioTranscription() {
       }
 
       const blob = await response.blob();
+      
+      // Check file size after download
+      if (blob.size > MAX_FILE_SIZE) {
+        throw new Error('Audio file size exceeds 25MB limit. Please use a smaller file.');
+      }
+
       const blobUrl = URL.createObjectURL(blob);
       setAudioUrl(blobUrl);
 
