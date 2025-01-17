@@ -8,19 +8,30 @@ const client = new OpenAI({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL
 });
 
-async function formatWithAI(text: string): Promise<string> {
+async function formatWithAI(text: string, language: string = 'auto'): Promise<string> {
   try {
+    const systemPrompt = language === 'en' 
+      ? `You are a transcript formatter. Format the given English transcript to make it more readable by:
+1. Adding basic punctuation and capitalization
+2. Keeping the original wording and structure
+3. Preserving all content without removing or summarizing anything
+4. Keep the original language of the transcript, do not translate
+
+Make minimal changes to improve readability while keeping the original meaning and structure intact.`
+      : `You are a transcript formatter. Format the given transcript to make it more readable by:
+1. Adding basic punctuation and capitalization
+2. Keeping the original wording and structure
+3. Preserving all content without removing or summarizing anything
+4. Keep the original language of the transcript, do not translate
+
+Make minimal changes to improve readability while keeping the original meaning and structure intact.`;
+
     const response = await client.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: `You are a transcript formatter. Format the given transcript to make it more readable by:
-1. Adding basic punctuation and capitalization
-2. Keeping the original wording and structure
-3. Preserving all content without removing or summarizing anything
-
-Make minimal changes to improve readability while keeping the original meaning and structure intact.`
+          content: systemPrompt
         },
         {
           role: 'user',
@@ -42,6 +53,7 @@ export async function POST(request: Request) {
     
     const formData = await request.formData();
     const file = formData.get('file');
+    const language = formData.get('language') as string || 'auto';
     
     if (!file) {
       return NextResponse.json(
@@ -72,20 +84,31 @@ export async function POST(request: Request) {
       const fileType = file instanceof Blob ? file.type : 'audio/mpeg';
       logger.info('[Transcription] Audio file type:', fileType);
       const extension = `.${getExtensionFromMimeType(fileType)}`;
-
-      const response = await client.audio.transcriptions.create({
-        model: 'whisper-1',
-        file: new File([file as Blob], `audio${extension}`, { type: fileType }),
-        response_format: "text",
-        language: "en"
-      });
+      let response;
+      logger.info('[Transcription] Using language:', language);
+      if (language !== 'auto') {
+         response = await client.audio.transcriptions.create({
+          model: 'whisper-1',
+            file: new File([file as Blob], `audio${extension}`, { type: fileType }),
+            response_format: "text",
+            language: "en"
+          });
+      }else{
+         response = await client.audio.transcriptions.create({
+          model: 'whisper-1',
+            file: new File([file as Blob], `audio${extension}`, { type: fileType }),
+            response_format: "text",
+            prompt: "如果是中文，请使用简体中文"
+          });
+      }
+    
       logger.info('[Transcription] Whisper transcription completed');
       const rawTranscript = typeof response === 'string' ? response : JSON.stringify(response);
       logger.info('[Transcription] Raw transcript length:', rawTranscript.length);
-      
+
       // Use AI to format the transcript
       logger.info('[Transcription] Starting AI formatting');
-      const formattedTranscript = await formatWithAI(rawTranscript);
+      const formattedTranscript = await formatWithAI(rawTranscript, language);
       logger.info('[Transcription] AI formatting completed');
       logger.info('[Transcription] Formatted transcript length:', formattedTranscript.length);
 
