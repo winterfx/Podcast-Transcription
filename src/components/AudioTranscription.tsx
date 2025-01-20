@@ -41,6 +41,7 @@ export default function AudioTranscription() {
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
         setError('File size exceeds 25MB limit. Please upload a smaller file.');
+        logger.error('[File] File size exceeds 25MB limit.',file.size);
         return;
       }
       setUrlInput('');

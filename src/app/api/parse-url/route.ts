@@ -20,8 +20,7 @@ export async function POST(request: Request) {
 
     try {
       const page = await browser.newPage();
-      
-      // 使用 Promise 来处理音频URL的查找
+
       const audioUrl = await new Promise<string>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('Timeout: Audio URL not found'));
