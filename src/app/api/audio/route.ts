@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     
     // 如果是小宇宙链接，解析出音频URL
     if (audioUrl.includes('xiaoyuzhoufm.com')) {
-      logger.info('[Audio] Parsing Xiaoyuzhou URL');
+      logger.info('[Audio] Parsing Xiaoyuzhou URL', audioUrl);
       
       // 直接在这里实现解析逻辑，避免额外的 API 调用
       const parseResponse = await fetch(`${request.headers.get('origin')}/api/parse-url`, {
