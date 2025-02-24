@@ -30,28 +30,32 @@ export default function AudioTranscription() {
   const [selectedPlatform, setSelectedPlatform] = useState('xiaoyuzhou');
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string>('');
 
   const languages = [
     { value: 'auto', label: 'Auto Detect' },
     { value: 'en', label: 'English' },
   ];
 
+  const resetAudioState = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioUrl('');
+    setAudioFile(null);
+    setTranscription('');
+    setSummary('');
+    setError(null);
+    setProgress('');
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    resetAudioState();
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > MAX_FILE_SIZE) {
-        setError('File size exceeds 25MB limit. Please upload a smaller file.');
-        return;
-      }
       setUrlInput('');
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
       setAudioFile(file);
       setAudioUrl(URL.createObjectURL(file));
-      // Reset transcription and summary
-      setTranscription('');
-      setSummary('');
     }
   };
 
@@ -101,10 +105,6 @@ export default function AudioTranscription() {
 
       const blob = await response.blob();
       
-      // Check file size after download
-      if (blob.size > MAX_FILE_SIZE) {
-        throw new Error('Audio file size exceeds 25MB limit. Please use a smaller file.');
-      }
 
       const blobUrl = URL.createObjectURL(blob);
       setAudioUrl(blobUrl);
@@ -124,44 +124,82 @@ export default function AudioTranscription() {
 
   const handleTranscribe = async () => {
     if (!audioFile) return;
-
     setIsTranscribing(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append('file', audioFile);
+    formData.append('language', selectedLanguage);
+
     try {
-      const formData = new FormData();
-      formData.append('file', audioFile);
-      formData.append('language', selectedLanguage);
-      
-      const transcribeResponse = await fetch('/api/transcribe', {
+      const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
 
-      if (!transcribeResponse.ok) {
-        throw new Error('Failed to transcribe audio');
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let partialTranscripts: string[] = [];
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const messages = chunk.split('\n').filter(Boolean);
+        
+        for (const message of messages) {
+          const data = JSON.parse(message);
+          
+          switch (data.type) {
+            case 'progress':
+              setProgress(data.message);
+              break;
+            case 'partial':
+              partialTranscripts[data.progress.current - 1] = data.transcript;
+              setTranscription(partialTranscripts.join(' '));
+              break;
+            case 'complete':
+
+              setProgress('Generating summary...');
+              
+              try {
+                const summaryResponse = await fetch('/api/summarize', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ 
+                    messages: [
+                      {
+                        role: "user",
+                        content: data.transcript
+                      }
+                    ],
+                    language: selectedLanguage 
+                  }),
+                });
+
+                if (!summaryResponse.ok) {
+                  throw new Error('Failed to generate summary');
+                }
+
+                const summaryData = await summaryResponse.json();
+                setSummary(summaryData.summary);
+                setProgress('Completed');
+              } catch (error) {
+                logger.error('Summary generation error:', error);
+                setError('Failed to generate summary');
+              }
+              break;
+            case 'error':
+              setError(data.error);
+              break;
+          }
+        }
       }
-
-      const data = await transcribeResponse.json();
-      setTranscription(data.transcript);
-
-      const summaryResponse = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: data.transcript }],
-        }),
-      });
-
-      if (!summaryResponse.ok) {
-        throw new Error('Failed to generate summary');
-      }
-
-      const summaryData = await summaryResponse.json();
-      setSummary(summaryData.summary);
-    } catch (err) {
-      logger.error('Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process audio. Please try again.');
+    } catch (error) {
+      setError('Failed to transcribe audio');
+      logger.error('Transcription error:', error);
     } finally {
       setIsTranscribing(false);
     }
@@ -193,6 +231,7 @@ export default function AudioTranscription() {
           <div className="flex flex-row justify-center space-x-2">
             <button
               onClick={() => {
+                resetAudioState();
                 setDialogType('podcast');
                 setDialogOpen(true);
               }}
@@ -204,7 +243,10 @@ export default function AudioTranscription() {
             </button>
             <div className="w-[1px] bg-slate-200"></div>
             <button
-              onClick={() => document.getElementById('file-upload')?.click()}
+              onClick={() => {
+                resetAudioState();
+                document.getElementById('file-upload')?.click();
+              }}
               className="flex items-center justify-center rounded-lg p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
             >
               <FileAudio className="w-5 h-5" />
@@ -213,6 +255,7 @@ export default function AudioTranscription() {
             <div className="w-[1px] bg-slate-200"></div>
             <button
               onClick={() => {
+                resetAudioState();
                 setDialogType('url');
                 setDialogOpen(true);
               }}
@@ -324,6 +367,11 @@ export default function AudioTranscription() {
                 )}
               </Button>
             </div>
+            {progress && (
+              <div className="text-sm text-gray-500 mt-2">
+                {progress}
+              </div>
+            )}
           </div>
         )}
 
