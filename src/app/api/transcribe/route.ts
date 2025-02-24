@@ -88,7 +88,7 @@ export async function POST(
     }
     
     // Ensure file is a Blob or File
-    if (!(file instanceof Blob) && !(file instanceof File)) {
+    if (!file || typeof file === 'string' || !(file instanceof Blob)) {
       logger.error('[Transcription] Invalid file format - not a Blob or File');
       return NextResponse.json(
         { error: 'Invalid file format' },
