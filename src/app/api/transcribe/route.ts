@@ -153,7 +153,7 @@ async function transcribeInChunks(
   const tempDir = join(baseDir, sessionId);
   
   try {
-    let transcriptions = [];
+    const transcriptions = [];
     
     // Create directories recursively
     if (!existsSync(baseDir)) {

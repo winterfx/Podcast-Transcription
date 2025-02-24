@@ -15,7 +15,6 @@ import {
 import { getFileExtension, getMimeType } from '@/lib/audio';
 import { logger } from '@/lib/utils';
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
 
 export default function AudioTranscription() {
   const [audioUrl, setAudioUrl] = useState('');
@@ -138,7 +137,7 @@ export default function AudioTranscription() {
 
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
-      let partialTranscripts: string[] = [];
+      const partialTranscripts: string[] = [];
 
       while (true) {
         const { value, done } = await reader.read();
