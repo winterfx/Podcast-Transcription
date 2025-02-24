@@ -1,4 +1,8 @@
 import { logger } from './utils';
+import { execSync } from 'child_process';
+import { join } from 'path';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 
 // 获取文件扩展名
 export function getFileExtension(url: string): string {
@@ -22,7 +26,7 @@ export function getExtensionFromMimeType(type: string): string {
     case 'audio/mp4':
       return 'm4a';
     case 'video/mp4':
-      return 'm4a';
+      return 'mp3';
     default:
       logger.warn('[Audio] Unknown audio type:', type);
       return 'mp3';
