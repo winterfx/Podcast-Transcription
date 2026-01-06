@@ -1,6 +1,6 @@
 {
   "name": "@winterfx/pt",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "CLI tool for podcast transcription with AI summary",
   "repository": {
     "type": "git",
