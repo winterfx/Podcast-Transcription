@@ -2,6 +2,10 @@
   "name": "@winterfx/pt",
   "version": "1.0.4",
   "description": "CLI tool for podcast transcription with AI summary",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/winterfx/Podcast-Transcription"
+  },
   "bin": {
     "pt": "./cli/bin/podcast-transcribe.js"
   },
