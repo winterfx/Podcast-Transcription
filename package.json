@@ -1,10 +1,14 @@
 {
-  "name": "podcast-transcription",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@winterfx/pt",
+  "version": "1.0.0",
+  "description": "CLI tool for podcast transcription with AI summary",
   "bin": {
     "pt": "./cli/bin/podcast-transcribe.js"
   },
+  "files": [
+    "cli/bin",
+    "cli/dist"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -13,6 +17,8 @@
     "lint:fix": "eslint . --fix",
     "cli": "tsx cli/src/index.ts",
     "pt": "tsx cli/src/index.ts",
+    "build:cli": "esbuild cli/src/index.ts --bundle --platform=node --target=node20 --outfile=cli/dist/index.js --alias:@=./src --external:puppeteer",
+    "prepublishOnly": "npm run build:cli",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"
@@ -50,6 +56,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitest/ui": "^4.0.16",
+    "esbuild": "^0.24.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "postcss": "^8",
