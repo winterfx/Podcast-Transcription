@@ -1,6 +1,6 @@
 {
   "name": "@winterfx/pt",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI tool for podcast transcription with AI summary",
   "bin": {
     "pt": "./cli/bin/podcast-transcribe.js"
