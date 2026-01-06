@@ -1,10 +1,6 @@
 # Podcast Transcription App
 ![](./public/demo.png)
 
-[English](#english) | [中文](#chinese)
-
-<h2 id="english">English</h2>
-
 A podcast transcription application based on Next.js and OpenAI Whisper API, supporting audio file transcription and intelligent summary generation.
 
 ## ✨ Features
@@ -16,13 +12,32 @@ A podcast transcription application based on Next.js and OpenAI Whisper API, sup
 - 🎨 Modern UI design
 - 💾 Download transcripts and summaries
 - 🎵 Built-in audio player
+- 🖥️ CLI tool support (`pt` command)
+- 📋 SRT subtitle format output
+- 🔄 Chunked processing for large audio files
+- ⚡ Parallel transcription for better performance
+- 📤 Multiple output formats (text, JSON, markdown, SRT)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - OpenAI API Key
+- FFmpeg (required for audio processing)
+
+#### Installing FFmpeg
+
+```bash
+# macOS
+brew install ffmpeg
+
+# Linux (Ubuntu/Debian)
+sudo apt-get install ffmpeg
+
+# Windows
+choco install ffmpeg
+```
 
 ### Installation
 
@@ -77,11 +92,14 @@ This project is deployed using [Zeabur](https://zeabur.com).
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 14](https://nextjs.org/)
+- **Framework**: [Next.js](https://nextjs.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
 - **API**: [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text)
 - **Type Safety**: [TypeScript](https://www.typescriptlang.org/)
+- **Testing**: [Vitest](https://vitest.dev/)
+- **CLI**: [Commander.js](https://github.com/tj/commander.js)
+- **Audio Processing**: [FFmpeg](https://ffmpeg.org/)
 
 ## 📝 Usage
 
@@ -100,6 +118,56 @@ This project is deployed using [Zeabur](https://zeabur.com).
    - Get AI-generated summary
    - Download transcripts and summaries using the download buttons
 
+## 🖥️ CLI Tool
+
+The project includes a command-line tool `pt` for transcribing audio files directly from the terminal.
+
+### CLI Usage
+
+```bash
+pt <input> [options]
+```
+
+**Arguments:**
+- `<input>` - Local file path or audio URL
+
+**Options:**
+- `-s, --summary` - Generate AI summary after transcription
+- `-l, --language <lang>` - Language code: `auto`, `en`, `zh`, etc. (default: `auto`)
+- `-o, --output <file>` - Output file path (default: stdout)
+- `--output-format <format>` - Output format: `text`, `json`, `markdown`, `srt` (default: `text`)
+- `-q, --quiet` - Suppress progress output
+
+### CLI Examples
+
+```bash
+# Transcribe a local audio file
+pt /path/to/podcast.mp3
+
+# Transcribe with AI summary
+pt podcast.mp3 --summary
+
+# Generate SRT subtitles
+pt podcast.mp3 --output-format srt -o subtitles.srt
+
+# JSON output with summary
+pt podcast.mp3 --summary --output-format json -o result.json
+
+# Transcribe from URL
+pt https://example.com/audio.mp3 --summary
+```
+
+### Running the CLI
+
+```bash
+# Via npm script
+npm run pt <input> [options]
+
+# Or after global install
+npm link
+pt <input> [options]
+```
+
 ## 🤝 Contributing
 
 Pull Requests and Issues are welcome!
@@ -108,112 +176,6 @@ Pull Requests and Issues are welcome!
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
----
-
-<h2 id="chinese">中文</h2>
-
-一个基于 Next.js 和 OpenAI Whisper API 的播客转录应用，支持音频文件转录和智能摘要生成。
-
-## 🌟 特性
-
-- 🎯 支持音频文件上传和 URL 输入两种方式
-- 🎙️ 支持小宇宙播客音频转录
-- 📝 使用 OpenAI Whisper API 进行高质量音频转录
-- 📊 AI 驱动的内容摘要生成
-- 🎨 现代化的 UI 设计
-- 💾 支持转录文本和摘要的下载
-- 🎵 内置音频播放器
-
-## 🚀 快速开始
-
-### 前置要求
-
-- Node.js 18+ 
-- OpenAI API Key
-
-### 安装
-
-1. 克隆仓库：
-```bash
-git clone https://github.com/yourusername/podcast-transcription.git
-cd podcast-transcription
-```
-
-2. 安装依赖：
-```bash
-npm install
-# 或
-yarn install
-# 或
-pnpm install
-```
-
-3. 配置环境变量：
-创建 `.env.local` 文件并添加以下内容：
-```env
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
-NEXT_PUBLIC_BASE_URL=your_endpoint
-```
-
-4. 启动开发服务器：
-```bash
-npm run dev
-# 或
-yarn dev
-# 或
-pnpm dev
-```
-
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
-
-### Docker 部署
-
-1. 构建 Docker 镜像：
-```bash
-docker build -t podcast-transcription .
-```
-
-2. 运行容器：
-```bash
-docker run -p 3000:3000 podcast-transcription
-```
-
-### Zeabur 部署
-
-本项目使用 [Zeabur](https://zeabur.com) 进行部署。
-
-## 🛠️ 技术栈
-
-- **Framework**: [Next.js 14](https://nextjs.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
-- **API**: [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text)
-- **Type Safety**: [TypeScript](https://www.typescriptlang.org/)
-
-## 📝 使用说明
-
-1. **文件上传**：
-   - 点击 "File Upload" 标签
-   - 选择本地音频文件
-   - 点击 "Transcribe" 开始转录
-
-2. **URL 输入**：
-   - 点击 "URL Input" 标签
-   - 输入播客链接（支持小宇宙播客）
-   - 点击 "Transcribe" 开始转录
-
-3. **查看结果**：
-   - 转录完成后会显示详细的文本内容
-   - 同时生成内容摘要
-   - 可以通过下载按钮保存转录文本和摘要
-
-## 🤝 贡献
-
-欢迎提交 Pull Requests 和 Issues！
-
-## 📄 许可证
-
-MIT License - 查看 [LICENSE](LICENSE) 文件了解详情。
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=winterfx/Podcast-Transcription&type=Date)](https://star-history.com/#winterfx/Podcast-Transcription&Date)
