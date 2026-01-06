@@ -2,29 +2,43 @@
   "name": "podcast-transcription",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "pt": "./cli/bin/podcast-transcribe.js"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "cli": "tsx cli/src/index.ts",
+    "pt": "tsx cli/src/index.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.2",
     "@types/uuid": "^10.0.0",
     "axios": "^1.7.9",
+    "chalk": "^4.1.2",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "commander": "^14.0.2",
     "dotenv": "^16.4.7",
     "lucide-react": "^0.469.0",
-    "next": "15.1.4",
+    "next": "16.1.1",
     "openai": "^4.77.4",
+    "ora": "^5.4.1",
+    "p-limit": "^7.2.0",
     "puppeteer": "^24.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0"
@@ -33,12 +47,19 @@
     "@eslint/eslintrc": "^3",
     "@types/ffmpeg": "^1.0.7",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitest/ui": "^4.0.16",
     "eslint": "^9",
-    "eslint-config-next": "15.1.4",
+    "eslint-config-next": "16.1.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vitest": "^4.0.16"
+  },
+  "overrides": {
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3"
   }
 }
