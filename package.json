@@ -1,5 +1,5 @@
 {
-  "name": "@winterfx/pt",
+  "name": "@winterjf/pt",
   "version": "1.0.1",
   "description": "CLI tool for podcast transcription with AI summary",
   "bin": {
