@@ -34,6 +34,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+*.d.ts
+!next-env.d.ts
+
+# compiled output in src
+src/**/*.js
+src/**/*.js.map
 
 # temporary files
 /tmp/*
