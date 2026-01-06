@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { getExtensionFromMimeType } from '@/lib/audio';
 import { logger } from '@/lib/utils';
-import { join } from 'path';
+import { join, extname } from 'path';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
+import { WhisperVerboseResponse, SrtEntry } from '@/lib/core/types';
+import { convertSegmentsToSrtEntries, entriesToSrtString } from '@/lib/core/srt';
+
+// Route Segment Config - 支持大文件上传
+export const maxDuration = 300; // 5 分钟超时
 
 const client = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -14,18 +18,9 @@ const client = new OpenAI({
 
 async function formatWithAI(
   text: string, 
-  language: string = 'auto'
 ): Promise<string> {
   try {
-    const systemPrompt = language === 'en' 
-      ? `You are a transcript formatter. Format the given English transcript to make it more readable by:
-1. Adding basic punctuation and capitalization
-2. Keeping the original wording and structure
-3. Preserving all content without removing or summarizing anything
-4. Keep the original language of the transcript, do not translate
-
-Make minimal changes to improve readability while keeping the original meaning and structure intact.`
-      : `You are a transcript formatter. Format the given transcript to make it more readable by:
+    const systemPrompt = `You are a transcript formatter. Format the given transcript to make it more readable by:
 1. Adding basic punctuation and capitalization
 2. Keeping the original wording and structure
 3. Preserving all content without removing or summarizing anything
@@ -66,6 +61,7 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file');
     const language = formData.get('language') as string || 'auto';
+    const outputFormat = formData.get('outputFormat') as string || 'text';
     
     if (!file) {
       return NextResponse.json(
@@ -97,17 +93,20 @@ export async function POST(
     }
 
 
-    const fileBlob = file instanceof File ? new Blob([file], { type: file.type }) : file;
+    // Get file extension from filename
+    const fileName = file instanceof File ? file.name : 'audio.mp3';
+    const fileExtension = extname(fileName) || '.mp3';
 
     (async () => {
       try {
-        const fullTranscript = await transcribeInChunks(fileBlob, writer, encoder, language);
-        
+        const result = await transcribeInChunks(file, fileExtension, writer, encoder, language, outputFormat);
+
         // Send final result
         await writer.write(
-          encoder.encode(JSON.stringify({ 
+          encoder.encode(JSON.stringify({
             type: 'complete',
-            transcript: fullTranscript 
+            transcript: result.text,
+            srt: result.srt
           }) + '\n')
         );
       } catch (error) {
@@ -141,20 +140,33 @@ export async function POST(
   }
 }
 
+interface TranscribeResult {
+  text: string;
+  srt?: string;
+}
+
 async function transcribeInChunks(
-  audioFile: Blob, 
+  audioFile: Blob,
+  extension: string,
   writer: WritableStreamDefaultWriter<Uint8Array>,
   encoder: TextEncoder,
   language: string = 'auto',
+  outputFormat: string = 'text',
   chunkDuration: number = 300 // 5 minutes in seconds
-): Promise<string> {
+): Promise<TranscribeResult> {
   const sessionId = uuidv4();
   const baseDir = join(process.cwd(), 'temp');
   const tempDir = join(baseDir, sessionId);
-  
+  const needSrt = outputFormat === 'srt';
+
+  // Ensure extension starts with dot
+  const ext = extension.startsWith('.') ? extension : `.${extension}`;
+
   try {
-    const transcriptions = [];
-    
+    const transcriptions: string[] = [];
+    const allSrtEntries: SrtEntry[] = [];
+    let globalSrtIndex = 1;
+
     // Create directories recursively
     if (!existsSync(baseDir)) {
       mkdirSync(baseDir, { recursive: true });
@@ -165,15 +177,8 @@ async function transcribeInChunks(
 
     logger.info(`[Transcription] Created temp directory: ${tempDir}`);
 
-    const fileType = audioFile instanceof Blob ? audioFile.type : 'audio/mpeg';
-    logger.info('[Transcription] Original audio type:', fileType);
-
-    const extension = `.${getExtensionFromMimeType(fileType)}`;
-
-    logger.info('[Transcription] Converted audio type:', fileType);
-
-    const inputPath = join(tempDir, `input${extension}`);
-    const buffer = await audioFile.arrayBuffer();  
+    const inputPath = join(tempDir, `input${ext}`);
+    const buffer = await audioFile.arrayBuffer();
     writeFileSync(inputPath, Buffer.from(buffer));
 
     // Get audio duration using ffprobe
@@ -183,12 +188,13 @@ async function transcribeInChunks(
 
     logger.info('[Transcription] Audio details:', {
       duration: totalDuration,
-      chunks: chunks
+      chunks: chunks,
+      outputFormat: outputFormat
     });
 
     for (let i = 0; i < chunks; i++) {
       const start = i * chunkDuration;
-      const outputPath = join(tempDir, `chunk-${i + 1}${extension}`);
+      const outputPath = join(tempDir, `chunk-${i + 1}${ext}`);
       // Split audio using ffmpeg
       const splitCmd = `ffmpeg -i ${inputPath} -ss ${start} -t ${chunkDuration} -c copy ${outputPath}`;
       execSync(splitCmd);
@@ -199,50 +205,90 @@ async function transcribeInChunks(
       }
 
       await writer.write(
-        encoder.encode(JSON.stringify({ 
-          type: 'progress', 
-          message: `Transcribing chunk ${i + 1}/${chunks}...` 
+        encoder.encode(JSON.stringify({
+          type: 'progress',
+          message: `Transcribing chunk ${i + 1}/${chunks}...`
         }) + '\n')
       );
 
       try {
-        let response;
         logger.info(`[Transcription] Starting transcription for chunk ${i + 1}`);
-        
+
         const chunkBuffer = readFileSync(outputPath);
-        const chunkFile = new File([chunkBuffer], `chunk-${i}${extension}`, { type:fileType });
+        // Whisper API识别文件格式通过文件内容，不需要指定type
+        const chunkFile = new File([chunkBuffer], `chunk-${i}${ext}`);
 
-        if (language !== 'auto') {
-          response = await client.audio.transcriptions.create({
+        if (needSrt) {
+          // Use verbose_json for SRT output to get timestamps
+          const response = await client.audio.transcriptions.create({
             model: 'whisper-1',
             file: chunkFile,
-            response_format: "text",
-            language: language
-          });
+            response_format: "verbose_json",
+            language: language !== 'auto' ? language : undefined,
+            prompt: language === 'auto' ? "如果是中文，请使用简体中文" : undefined
+          }) as unknown as WhisperVerboseResponse;
+
+          transcriptions.push(response.text);
+
+          // Convert segments to SRT entries with time offset
+          const chunkEntries = convertSegmentsToSrtEntries(
+            response.segments,
+            i,
+            chunkDuration,
+            globalSrtIndex
+          );
+          allSrtEntries.push(...chunkEntries);
+          globalSrtIndex += chunkEntries.length;
+
+          const chunkSrt = entriesToSrtString(chunkEntries);
+
+          // For SRT, skip AI formatting to preserve text-timestamp alignment
+          await writer.write(
+            encoder.encode(JSON.stringify({
+              type: 'partial',
+              transcript: response.text,
+              srt: chunkSrt,
+              progress: {
+                current: i + 1,
+                total: chunks
+              }
+            }) + '\n')
+          );
         } else {
-          response = await client.audio.transcriptions.create({
-            model: 'whisper-1',
-            file: chunkFile,
-            response_format: "text",
-            prompt: "如果是中文，请使用简体中文"
-          });
+          // Original text-only flow
+          let response;
+          if (language !== 'auto') {
+            response = await client.audio.transcriptions.create({
+              model: 'whisper-1',
+              file: chunkFile,
+              response_format: "text",
+              language: language
+            });
+          } else {
+            response = await client.audio.transcriptions.create({
+              model: 'whisper-1',
+              file: chunkFile,
+              response_format: "text",
+              prompt: "如果是中文，请使用简体中文"
+            });
+          }
+
+          const transcription = typeof response === 'string' ? response : JSON.stringify(response);
+          transcriptions.push(transcription);
+
+          const formattedChunk = await formatWithAI(transcription);
+
+          await writer.write(
+            encoder.encode(JSON.stringify({
+              type: 'partial',
+              transcript: formattedChunk,
+              progress: {
+                current: i + 1,
+                total: chunks
+              }
+            }) + '\n')
+          );
         }
-
-        const transcription = typeof response === 'string' ? response : JSON.stringify(response);
-        transcriptions.push(transcription);
-
-        const formattedChunk = await formatWithAI(transcription, language);
-        
-        await writer.write(
-          encoder.encode(JSON.stringify({ 
-            type: 'partial',
-            transcript: formattedChunk,
-            progress: {
-              current: i + 1,
-              total: chunks
-            }
-          }) + '\n')
-        );
 
       } catch (error) {
         logger.error(`[Transcription] Error processing chunk ${i + 1}:`, error);
@@ -250,7 +296,15 @@ async function transcribeInChunks(
       }
     }
 
-    return transcriptions.join(' ');
+    const result: TranscribeResult = {
+      text: transcriptions.join(' ')
+    };
+
+    if (needSrt) {
+      result.srt = entriesToSrtString(allSrtEntries);
+    }
+
+    return result;
   } catch (error) {
     logger.error('[Transcription] Error:', error);
     throw error;

@@ -1,53 +1,47 @@
-import { logger } from './utils';
+/**
+ * Audio file utilities - simplified version
+ * Only handles file extension extraction, no complex MimeType logic needed
+ */
 
-// 获取文件扩展名
-export function getFileExtension(url: string): string {
-  const ext = url.split('.').pop()?.toLowerCase();
-  return ext || 'mp3';
-}
+// Supported audio extensions
+const SUPPORTED_EXTENSIONS = ['mp3', 'wav', 'm4a', 'ogg', 'mp4', 'webm', 'flac'];
 
-// 从MIME类型获取文件扩展名
-export function getExtensionFromMimeType(type: string): string {
-  switch (type) {
-    case 'audio/mpeg':
-    case 'audio/mp3':
-      return 'mp3';
-    case 'audio/wav':
-    case 'audio/x-wav':
-      return 'wav';
-    case 'audio/ogg':
-      return 'ogg';
-    case 'audio/x-m4a':
-    case 'audio/m4a':
-    case 'audio/mp4':
-      return 'm4a';
-    case 'video/mp4':
-      return 'mp3';
-    default:
-      logger.warn('[Audio] Unknown audio type:', type);
-      return 'mp3';
+/**
+ * Extract file extension from URL or filename
+ * Handles query parameters and fragments
+ */
+export function getFileExtension(urlOrPath: string): string {
+  let pathname = urlOrPath;
+
+  try {
+    // Try to parse as URL first
+    const url = new URL(urlOrPath);
+    pathname = url.pathname;
+  } catch {
+    // Not a valid URL, treat as file path
+    // Remove query params and fragments manually for non-URL paths
+    pathname = urlOrPath.split('?')[0].split('#')[0];
   }
-}
 
-// 从扩展名获取MIME类型
-export function getMimeTypeFromExtension(ext: string): string {
-  switch (ext) {
-    case 'm4a':
-      return 'audio/mp4';
-    case 'mp3':
-      return 'audio/mpeg';
-    case 'wav':
-      return 'audio/wav';
-    case 'ogg':
-      return 'audio/ogg';
-    default:
-      return 'audio/mpeg';
+  // Extract extension from pathname
+  const ext = pathname.split('.').pop()?.toLowerCase();
+  if (ext && SUPPORTED_EXTENSIONS.includes(ext)) {
+    return ext;
   }
+
+  return 'mp3'; // Default fallback
 }
 
-// 获取或推断MIME类型
-export function getMimeType(blob: Blob, url: string): string {
-  if (blob.type) return blob.type;
-  const ext = getFileExtension(url);
-  return getMimeTypeFromExtension(ext);
+/**
+ * Check if extension is supported
+ */
+export function isSupportedExtension(ext: string): boolean {
+  return SUPPORTED_EXTENSIONS.includes(ext.toLowerCase());
+}
+
+/**
+ * Get supported extensions list
+ */
+export function getSupportedExtensions(): string[] {
+  return [...SUPPORTED_EXTENSIONS];
 }

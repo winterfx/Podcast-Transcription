@@ -12,8 +12,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog';
-import { getFileExtension, getMimeType } from '@/lib/audio';
+import { getFileExtension } from '@/lib/audio';
 import { logger } from '@/lib/utils';
+import { Switch } from './ui/switch';
 
 
 export default function AudioTranscription() {
@@ -21,6 +22,7 @@ export default function AudioTranscription() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
+  const [srtContent, setSrtContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -30,9 +32,12 @@ export default function AudioTranscription() {
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string>('');
+  const [enableSummary, setEnableSummary] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState<'txt' | 'srt'>('txt');
 
   const languages = [
     { value: 'auto', label: 'Auto Detect' },
+    { value: 'zh', label: '中文' },
     { value: 'en', label: 'English' },
   ];
 
@@ -44,6 +49,7 @@ export default function AudioTranscription() {
     setAudioFile(null);
     setTranscription('');
     setSummary('');
+    setSrtContent('');
     setError(null);
     setProgress('');
   };
@@ -109,8 +115,8 @@ export default function AudioTranscription() {
       setAudioUrl(blobUrl);
 
       const extension = getFileExtension(urlInput);
-      const mimeType = getMimeType(blob, urlInput);
-      const audioFile = new File([blob], `podcast.${extension}`, { type: mimeType });
+      // File对象不需要指定type，Whisper API通过文件内容识别格式
+      const audioFile = new File([blob], `podcast.${extension}`);
       setAudioFile(audioFile);
     } catch (err) {
       logger.error('Error:', err);
@@ -125,9 +131,11 @@ export default function AudioTranscription() {
     if (!audioFile) return;
     setIsTranscribing(true);
     setError(null);
+    setSrtContent('');
     const formData = new FormData();
     formData.append('file', audioFile);
     formData.append('language', selectedLanguage);
+    formData.append('outputFormat', 'srt'); // Always request SRT for download option
 
     try {
       const response = await fetch('/api/transcribe', {
@@ -138,17 +146,18 @@ export default function AudioTranscription() {
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       const partialTranscripts: string[] = [];
+      const partialSrts: string[] = [];
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value);
         const messages = chunk.split('\n').filter(Boolean);
-        
+
         for (const message of messages) {
           const data = JSON.parse(message);
-          
+
           switch (data.type) {
             case 'progress':
               setProgress(data.message);
@@ -156,39 +165,46 @@ export default function AudioTranscription() {
             case 'partial':
               partialTranscripts[data.progress.current - 1] = data.transcript;
               setTranscription(partialTranscripts.join(' '));
+              if (data.srt) {
+                partialSrts[data.progress.current - 1] = data.srt;
+                setSrtContent(partialSrts.join('\n'));
+              }
               break;
             case 'complete':
-
-              setProgress('Generating summary...');
-              
-              try {
-                const summaryResponse = await fetch('/api/summarize', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ 
-                    messages: [
-                      {
-                        role: "user",
-                        content: data.transcript
-                      }
-                    ],
-                    language: selectedLanguage 
-                  }),
-                });
-
-                if (!summaryResponse.ok) {
-                  throw new Error('Failed to generate summary');
-                }
-
-                const summaryData = await summaryResponse.json();
-                setSummary(summaryData.summary);
-                setProgress('Completed');
-              } catch (error) {
-                logger.error('Summary generation error:', error);
-                setError('Failed to generate summary');
+              if (data.srt) {
+                setSrtContent(data.srt);
               }
+              if (enableSummary) {
+                setProgress('Generating summary...');
+                try {
+                  const summaryResponse = await fetch('/api/summarize', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      messages: [
+                        {
+                          role: "user",
+                          content: data.transcript
+                        }
+                      ],
+                      language: selectedLanguage
+                    }),
+                  });
+
+                  if (!summaryResponse.ok) {
+                    throw new Error('Failed to generate summary');
+                  }
+
+                  const summaryData = await summaryResponse.json();
+                  setSummary(summaryData.summary);
+                } catch (error) {
+                  logger.error('Summary generation error:', error);
+                  setError('Failed to generate summary');
+                }
+              }
+              setProgress('Completed');
               break;
             case 'error':
               setError(data.error);
@@ -348,6 +364,16 @@ export default function AudioTranscription() {
                   </option>
                 ))}
               </select>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="enable-summary"
+                  checked={enableSummary}
+                  onCheckedChange={setEnableSummary}
+                />
+                <label htmlFor="enable-summary" className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                  AI Summary
+                </label>
+              </div>
               <Button
                 onClick={handleTranscribe}
                 disabled={isTranscribing}
@@ -384,23 +410,36 @@ export default function AudioTranscription() {
                       <FileText className="h-5 w-5" />
                       <span>Transcription</span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const blob = new Blob([transcription], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'transcription.txt';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      }}
-                      className="hover:bg-primary hover:text-primary-foreground"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={downloadFormat}
+                        onChange={(e) => setDownloadFormat(e.target.value as 'txt' | 'srt')}
+                        className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm"
+                      >
+                        <option value="txt">TXT</option>
+                        <option value="srt">SRT</option>
+                      </select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const content = downloadFormat === 'srt' ? srtContent : transcription;
+                          const mimeType = downloadFormat === 'srt' ? 'application/x-subrip' : 'text/plain';
+                          const blob = new Blob([content], { type: mimeType });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `transcription.${downloadFormat}`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="hover:bg-primary hover:text-primary-foreground"
+                        disabled={downloadFormat === 'srt' && !srtContent}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
