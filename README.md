@@ -33,20 +33,25 @@ Choose one of the following methods:
 **Option 1: Environment Variable (Recommended)**
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-export OPENAI_API_KEY="your-api-key"
+export API_KEY="your-api-key"
+export BASE_URL="https://api.openai.com/v1"  # optional
 ```
 
-**Option 2: Config File**
+**Option 2: Config File (~/.pt/.env)**
 ```bash
-# Create config directory
 mkdir -p ~/.pt
-echo 'OPENAI_API_KEY=your-api-key' > ~/.pt/.env
+cat > ~/.pt/.env << 'EOF'
+API_KEY=your-api-key
+BASE_URL=https://api.openai.com/v1
+EOF
 ```
 
-**Option 3: Current Directory**
+**Option 3: Current Directory (.env)**
 ```bash
-# Create .env in your working directory
-echo 'OPENAI_API_KEY=your-api-key' > .env
+cat > .env << 'EOF'
+API_KEY=your-api-key
+BASE_URL=https://api.openai.com/v1
+EOF
 ```
 
 ## 🚀 Web App Development
@@ -90,8 +95,8 @@ pnpm install
 3. Configure environment variables:
 Create a `.env.local` file and add:
 ```env
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
-NEXT_PUBLIC_BASE_URL=your_endpoint
+API_KEY=your_openai_api_key
+BASE_URL=your_endpoint
 ```
 
 4. Start the development server:
