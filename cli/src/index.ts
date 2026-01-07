@@ -2,11 +2,17 @@
 import { Command } from 'commander';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
+import { homedir } from 'os';
 import { transcribeCommand, TranscribeOptions } from './commands/transcribe';
 
-// Load environment variables from project root
-dotenv.config({ path: resolve(__dirname, '../../.env.local') });
-dotenv.config({ path: resolve(__dirname, '../../.env') });
+// Load environment variables from multiple locations (first found wins)
+// 1. Current working directory
+dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: resolve(process.cwd(), '.env') });
+// 2. User home directory ~/.pt/.env
+dotenv.config({ path: resolve(homedir(), '.pt', '.env') });
+// 3. User config directory ~/.config/pt/.env
+dotenv.config({ path: resolve(homedir(), '.config', 'pt', '.env') });
 
 const program = new Command();
 

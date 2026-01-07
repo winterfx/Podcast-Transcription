@@ -1,7 +1,7 @@
-# Podcast Transcription App
+# PT - Audio Transcription Tool
 ![](./public/demo.png)
 
-A podcast transcription application based on Next.js and OpenAI Whisper API, supporting audio file transcription and intelligent summary generation.
+An audio transcription tool based on Next.js and OpenAI Whisper API, supporting audio file transcription and intelligent summary generation.
 
 ## ✨ Features
 
@@ -18,7 +18,38 @@ A podcast transcription application based on Next.js and OpenAI Whisper API, sup
 - ⚡ Parallel transcription for better performance
 - 📤 Multiple output formats (text, JSON, markdown, SRT)
 
-## 🚀 Getting Started
+## 📦 CLI Installation
+
+### Install via npm
+
+```bash
+npm install -g @winterfx/pt
+```
+
+### Configure API Key
+
+Choose one of the following methods:
+
+**Option 1: Environment Variable (Recommended)**
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export OPENAI_API_KEY="your-api-key"
+```
+
+**Option 2: Config File**
+```bash
+# Create config directory
+mkdir -p ~/.pt
+echo 'OPENAI_API_KEY=your-api-key' > ~/.pt/.env
+```
+
+**Option 3: Current Directory**
+```bash
+# Create .env in your working directory
+echo 'OPENAI_API_KEY=your-api-key' > .env
+```
+
+## 🚀 Web App Development
 
 ### Prerequisites
 
@@ -85,38 +116,6 @@ docker build -t podcast-transcription .
 ```bash
 docker run -p 3000:3000 podcast-transcription
 ```
-
-### Zeabur Deployment
-
-This project is deployed using [Zeabur](https://zeabur.com).
-
-## 🛠️ Tech Stack
-
-- **Framework**: [Next.js](https://nextjs.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
-- **API**: [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text)
-- **Type Safety**: [TypeScript](https://www.typescriptlang.org/)
-- **Testing**: [Vitest](https://vitest.dev/)
-- **CLI**: [Commander.js](https://github.com/tj/commander.js)
-- **Audio Processing**: [FFmpeg](https://ffmpeg.org/)
-
-## 📝 Usage
-
-1. **File Upload**:
-   - Click the "File Upload" tab
-   - Select a local audio file
-   - Click "Transcribe" to start
-
-2. **URL Input**:
-   - Click the "URL Input" tab
-   - Enter a podcast link (supports Xiaoyuzhou podcast)
-   - Click "Transcribe" to start
-
-3. **View Results**:
-   - View detailed transcription after processing
-   - Get AI-generated summary
-   - Download transcripts and summaries using the download buttons
 
 ## 🖥️ CLI Tool
 

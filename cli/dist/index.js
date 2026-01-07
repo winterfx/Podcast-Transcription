@@ -17543,6 +17543,7 @@ var {
 // cli/src/index.ts
 var import_dotenv = __toESM(require_main());
 var import_path4 = require("path");
+var import_os = require("os");
 
 // cli/src/commands/transcribe.ts
 var import_fs3 = require("fs");
@@ -23652,8 +23653,10 @@ Error: ${error instanceof Error ? error.message : "Unknown error"}`)
 }
 
 // cli/src/index.ts
-import_dotenv.default.config({ path: (0, import_path4.resolve)(__dirname, "../../.env.local") });
-import_dotenv.default.config({ path: (0, import_path4.resolve)(__dirname, "../../.env") });
+import_dotenv.default.config({ path: (0, import_path4.resolve)(process.cwd(), ".env.local") });
+import_dotenv.default.config({ path: (0, import_path4.resolve)(process.cwd(), ".env") });
+import_dotenv.default.config({ path: (0, import_path4.resolve)((0, import_os.homedir)(), ".pt", ".env") });
+import_dotenv.default.config({ path: (0, import_path4.resolve)((0, import_os.homedir)(), ".config", "pt", ".env") });
 var program2 = new Command();
 program2.name("pt").description("CLI tool for podcast transcription with AI summary").version("1.0.0");
 program2.argument("[input]", "Local file path or direct audio URL").option("-s, --summary", "Generate AI summary after transcription", false).option("--no-summary", "Disable AI summary generation").option("-l, --language <lang>", "Language code (auto, en, zh, etc.)", "auto").option("-o, --output <file>", "Output file path (stdout if not specified)").option("--output-format <format>", "Output format: text, json, markdown, srt", "text").option("-q, --quiet", "Suppress progress output", false).action((input, options) => {
